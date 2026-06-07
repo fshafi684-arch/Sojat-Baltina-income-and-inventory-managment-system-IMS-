@@ -1,0 +1,21 @@
+{
+  "name": "sojat-backend",
+  "version": "1.0.0",
+  "description": "Node.js is an open-source, cross-platform JavaScript runtime environment.",
+  "main": "index.js",
+  "dependencies": {
+    "body-parser": "^2.2.2",
+    "corepack": "^0.23.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "npm": "^10.2.4",
+    "pg": "^8.21.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

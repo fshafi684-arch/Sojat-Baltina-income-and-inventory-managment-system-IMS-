@@ -1,0 +1,3134 @@
+﻿<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ሶጃት ባልትና - የዴስክቶ ካልኩሌተር</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --sidebar-bg: #1a4d2e;
+            --sidebar-text: #ecf0f1;
+            --sidebar-hover: #2d6a42;
+            --header-bg: #ffffff;
+            --report-bg: #fffde7;
+            --retail-color: #26a69a;
+            --wholesale-color: #5c6bc0;
+            --red-btn: #ff7043;
+            --green-btn: #1a4d2e;
+            --blue-btn: #42a5f5;
+            --purple-btn: #ab47bc;
+            --border-color: #dfe6e9;
+            --text-color: #2d3436;
+            --item-bg: #ffffff;
+            --item-hover: #f1f2f6;
+            --brand-gold: #f4a460;
+            --low-stock: #e74c3c;
+            --medium-stock: #f39c12;
+            --good-stock: #26a69a;
+            --manager-bg: #2c3e50;
+            --modal-dark: #1e1e1e;
+            --modal-text: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Noto Sans Ethiopic', 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text-color);
+            direction: ltr;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: linear-gradient(180deg, var(--sidebar-bg) 0%, #0d2b1a 100%);
+            color: var(--sidebar-text);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            flex-shrink: 0;
+            z-index: 100;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .sidebar.collapsed {
+            width: 80px;
+        }
+
+        .sidebar-header {
+            padding: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 90px;
+            background: rgba(0,0,0,0.1);
+        }
+
+        .brand-name {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .brand-name span:first-child {
+            font-size: 22px;
+            color: var(--brand-gold);
+            letter-spacing: 3px;
+            font-weight: 700;
+        }
+
+        .brand-name span:last-child {
+            font-size: 12px;
+            color: #bdc3c7;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .sidebar.collapsed .brand-name span:last-child {
+            display: none;
+        }
+
+        .toggle-sidebar-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .toggle-sidebar-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            overflow-y: auto;
+            padding-top: 15px;
+        }
+
+        .menu-item {
+            padding: 18px 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            transition: background 0.2s;
+            border-left: 4px solid transparent;
+            white-space: nowrap;
+        }
+
+        .menu-item:hover {
+            background-color: var(--sidebar-hover);
+        }
+
+        .menu-item.active {
+            background-color: var(--sidebar-hover);
+            border-left-color: var(--brand-gold);
+        }
+
+        .menu-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .menu-item-icon {
+            width: 28px;
+            text-align: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .menu-item-text {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .sidebar.collapsed .menu-item-text {
+            display: none;
+        }
+
+        .sidebar.collapsed .menu-item {
+            padding: 18px 15px;
+            justify-content: center;
+        }
+
+        .mode-toggle-container {
+            padding: 25px;
+            background: rgba(0,0,0,0.2);
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar.collapsed .mode-toggle-label,
+        .sidebar.collapsed .mode-switch span {
+            display: none;
+        }
+
+        .sidebar.collapsed .mode-toggle-container {
+            padding: 15px;
+            text-align: center;
+        }
+
+        .mode-toggle-label {
+            font-size: 13px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--brand-gold);
+            font-weight: 600;
+        }
+
+        .mode-switch {
+            display: flex;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 5px;
+        }
+
+        .mode-option {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .mode-option.active.retail { background: var(--retail-color); color: white; }
+        .mode-option.active.wholesale { background: var(--wholesale-color); color: white; }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .view-section {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .view-section.active {
+            display: flex;
+        }
+
+        .login-view {
+            background: linear-gradient(135deg, #1a4d2e 0%, #0d2b1a 100%);
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .login-card {
+            background: white;
+            padding: 50px;
+            border-radius: 15px;
+            width: 500px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            color: #333;
+            border-top: 5px solid var(--brand-gold);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .login-logo h1 {
+            color: var(--sidebar-bg);
+            font-size: 38px;
+            font-weight: 700;
+            letter-spacing: 4px;
+        }
+
+        .login-logo p {
+            color: #7f8c8d;
+            font-size: 15px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: 8px;
+        }
+
+        .login-title {
+            text-align: center;
+            margin-bottom: 35px;
+            color: #2c3e50;
+            font-size: 22px;
+            font-weight: 500;
+            padding-top: 25px;
+            border-top: 1px solid #eee;
+        }
+
+        .login-form-group {
+            margin-bottom: 25px;
+        }
+
+        .login-form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #555;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .employee-selector-btn {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 17px;
+            font-family: 'Noto Sans Ethiopic', sans-serif;
+            background-color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: border-color 0.3s;
+        }
+
+        .employee-selector-btn:hover {
+            border-color: var(--sidebar-bg);
+        }
+
+        .employee-selector-btn.selected {
+            border-color: var(--brand-gold);
+            background-color: #fff9e6;
+        }
+
+        .login-form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 17px;
+            transition: border-color 0.3s;
+        }
+
+        .login-form-group input:focus {
+            border-color: var(--sidebar-bg);
+            outline: none;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--sidebar-bg), #2d6a42);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 19px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(26, 77, 46, 0.4);
+        }
+
+        .manager-link-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .manager-link {
+            font-size: 13px;
+            color: var(--brand-gold);
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .manager-link:hover {
+            color: #d38d3f;
+            text-decoration: underline;
+        }
+
+        .password-hint {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #0d47a1;
+            text-align: center;
+        }
+
+        .password-hint strong {
+            color: #1565c0;
+        }
+
+        .employee-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            backdrop-filter: blur(5px);
+        }
+
+        .employee-modal-overlay.active {
+            display: flex;
+        }
+
+        .employee-modal {
+            background: var(--modal-dark);
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalSlideUp 0.3s ease;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .employee-modal-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .employee-modal-title {
+            color: var(--modal-text);
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .employee-modal-close {
+            background: none;
+            border: none;
+            color: var(--modal-text);
+            font-size: 28px;
+            cursor: pointer;
+            padding: 5px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .employee-modal-close:hover {
+            opacity: 1;
+        }
+
+        .employee-modal-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            max-height: 400px;
+        }
+
+        .employee-option {
+            display: flex;
+            align-items: center;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-radius: 8px;
+            margin-bottom: 5px;
+        }
+
+        .employee-option:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .employee-option.selected {
+            background: rgba(244, 164, 96, 0.2);
+        }
+
+        .employee-radio {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .employee-option.selected .employee-radio {
+            border-color: var(--brand-gold);
+            background: var(--brand-gold);
+        }
+
+        .employee-option.selected .employee-radio::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: var(--modal-dark);
+            border-radius: 50%;
+        }
+
+        .employee-name {
+            color: var(--modal-text);
+            font-size: 18px;
+            font-family: 'Noto Sans Ethiopic', sans-serif;
+        }
+
+        .employee-modal-footer {
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: center;
+        }
+
+        .employee-modal-done {
+            background: var(--brand-gold);
+            color: var(--modal-dark);
+            border: none;
+            padding: 15px 50px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .employee-modal-done:hover {
+            background: #ffb74d;
+            transform: translateY(-2px);
+        }
+
+        .manager-header {
+            background: var(--manager-bg);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .manager-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .manager-logout-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .manager-logout-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .dashboard-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 30px 40px;
+            background: #f4f6f8;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--brand-gold);
+        }
+
+        .stat-card.profit { border-left-color: var(--green-btn); }
+        .stat-card.alert { border-left-color: var(--low-stock); }
+
+        .stat-label {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .stat-sub {
+            font-size: 13px;
+            color: #95a5a6;
+            margin-top: 5px;
+        }
+
+        .dashboard-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .calc-header {
+            background-color: var(--header-bg);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            height: 90px;
+            border-top: 4px solid var(--brand-gold);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .menu-toggle-btn {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .menu-toggle-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .menu-toggle-btn span {
+            display: block;
+            width: 28px;
+            height: 4px;
+            background-color: var(--sidebar-bg);
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .menu-toggle-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(7px, 7px);
+        }
+
+        .menu-toggle-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-toggle-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        .header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .user-display {
+            font-size: 16px;
+            color: #555;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .mode-badge {
+            padding: 3px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 700;
+            color: white;
+            text-transform: uppercase;
+        }
+
+        .mode-badge.retail { background-color: var(--retail-color); }
+        .mode-badge.wholesale { background-color: var(--wholesale-color); }
+
+        .total-display {
+            font-size: 42px;
+            font-weight: 300;
+            color: var(--sidebar-bg);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .control-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            height: 80px;
+            border-bottom: 2px solid var(--border-color);
+            background: white;
+        }
+
+        .ctrl-btn {
+            border: none;
+            font-size: 38px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+            color: #fff;
+            border-right: 2px solid rgba(255,255,255,0.2);
+        }
+        
+        .ctrl-btn:last-child { border-right: none; }
+
+        .ctrl-btn:active { filter: brightness(0.9); transform: scale(0.97); }
+        .ctrl-btn.active-mode { box-shadow: inset 0 0 20px rgba(0,0,0,0.3); }
+
+        .btn-c { background: var(--red-btn); }
+        .btn-plus { background: var(--green-btn); }
+        .btn-minus { background: var(--blue-btn); }
+        .btn-eq { background: var(--purple-btn); }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background-color: var(--bg-color);
+            align-content: start;
+        }
+
+        .item-cell {
+            background-color: var(--item-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            position: relative;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+            min-height: 160px;
+        }
+
+        .item-cell:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            border-color: var(--sidebar-bg);
+        }
+
+        .item-cell.selected {
+            border-color: var(--sidebar-bg);
+            background-color: #e8f5e9;
+            box-shadow: 0 0 0 3px var(--sidebar-bg);
+        }
+
+        .item-cell.low-stock {
+            border-color: var(--low-stock);
+            background-color: #ffebee;
+        }
+
+        .item-cell.holding {
+            background-color: #fff3e0;
+            border-color: var(--brand-gold);
+            transform: scale(0.98);
+        }
+
+        .item-name {
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #2c3e50;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .item-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--sidebar-bg);
+        }
+
+        .item-unit {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .item-count {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background: #e74c3c;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: bold;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            border: 3px solid white;
+        }
+
+        .stock-indicator {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .stock-indicator.low { background: var(--low-stock); color: white; }
+        .stock-indicator.medium { background: var(--medium-stock); color: white; }
+        .stock-indicator.good { background: var(--good-stock); color: white; }
+
+        .long-press-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: var(--brand-gold);
+            width: 0%;
+            transition: width 0.1s linear;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .add-product-btn {
+            grid-column: 1 / -1;
+            background: white;
+            border: 3px dashed var(--sidebar-bg);
+            color: var(--sidebar-bg);
+            padding: 25px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            border-radius: 12px;
+            transition: all 0.25s;
+        }
+
+        .add-product-btn:hover {
+            border-color: var(--brand-gold);
+            color: var(--brand-gold);
+            background: #fff9e6;
+        }
+
+        .list-header, .report-header {
+            background-color: var(--header-bg);
+            padding: 25px 40px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border-top: 4px solid var(--brand-gold);
+        }
+
+        .report-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--sidebar-bg);
+        }
+
+        .report-icons {
+            display: flex;
+            gap: 18px;
+        }
+
+        .report-icons svg {
+            width: 28px;
+            height: 28px;
+            fill: #7f8c8d;
+            cursor: pointer;
+            transition: fill 0.2s;
+        }
+
+        .report-icons svg:hover {
+            fill: var(--sidebar-bg);
+        }
+
+        .report-filters {
+            display: flex;
+            gap: 18px;
+        }
+
+        .filter-btn {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 15px;
+            color: #555;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        .filter-btn:hover {
+            background: #f8f9fa;
+            border-color: var(--sidebar-bg);
+        }
+
+        .report-table-container {
+            flex: 1;
+            overflow: auto;
+            padding: 40px;
+            background: var(--bg-color);
+        }
+
+        .report-table-wrapper {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .report-table th {
+            text-align: left;
+            padding: 18px 25px;
+            color: #7f8c8d;
+            font-weight: 600;
+            border-bottom: 3px solid var(--border-color);
+            background: #f8f9fa;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .report-table td {
+            padding: 18px 25px;
+            border-bottom: 1px solid var(--border-color);
+            color: #2c3e50;
+            font-size: 16px;
+        }
+
+        .report-table tr:hover td {
+            background: #f8f9fa;
+        }
+
+        .stock-status {
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .stock-status.low { background: #ffebee; color: var(--low-stock); }
+        .stock-status.medium { background: #fff3e0; color: var(--medium-stock); }
+        .stock-status.good { background: #e8f5e9; color: var(--good-stock); }
+
+        .report-footer {
+            background: white;
+            padding: 20px 40px;
+            border-top: 2px solid var(--border-color);
+            text-align: right;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--sidebar-bg);
+        }
+
+        .change-view {
+            background: #f4f6f8;
+            justify-content: center;
+            align-items: center;
+            padding: 50px;
+        }
+
+        .change-card {
+            background: white;
+            padding: 50px;
+            border-radius: 15px;
+            width: 600px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 5px solid var(--brand-gold);
+        }
+
+        .change-total-display {
+            font-size: 56px;
+            font-weight: 300;
+            color: var(--sidebar-bg);
+            margin-bottom: 35px;
+        }
+
+        .change-input {
+            width: 100%;
+            padding: 18px;
+            font-size: 36px;
+            text-align: center;
+            border: 3px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-weight: 500;
+        }
+
+        .change-input:focus {
+            border-color: var(--brand-gold);
+            outline: none;
+        }
+
+        .change-result-box {
+            background: #e8f5e9;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 35px;
+        }
+
+        .change-result-label {
+            color: #7f8c8d;
+            margin-bottom: 8px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .change-result-value {
+            font-size: 42px;
+            font-weight: bold;
+            color: var(--green-btn);
+        }
+
+        .change-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        .action-btn-large {
+            flex: 1;
+            padding: 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .btn-secondary { background: #ecf0f1; color: #2c3e50; }
+        .btn-secondary:hover { background: #bdc3c7; }
+        .btn-primary { background: var(--green-btn); color: white; }
+        .btn-primary:hover { background: #21917c; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6); display: none;
+            justify-content: center; align-items: center; z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+        .modal-overlay.active { display: flex; }
+        
+        .modal {
+            background: white; padding: 40px; border-radius: 15px;
+            width: 600px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            animation: modalSlide 0.35s ease;
+            border-top: 5px solid var(--brand-gold);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes modalSlide {
+            from { opacity: 0; transform: translateY(-40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal h2 { margin-bottom: 30px; color: var(--sidebar-bg); text-align: center; font-size: 28px; font-weight: 600; }
+        .form-group { margin-bottom: 25px; }
+        .form-group label { display: block; margin-bottom: 10px; color: #555; font-weight: 600; font-size: 15px; }
+        .form-group input, .form-group select { width: 100%; padding: 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 17px; }
+        .form-group input:focus, .form-group select:focus { border-color: var(--sidebar-bg); outline: none; }
+        .modal-buttons { display: flex; gap: 15px; justify-content: flex-end; margin-top: 35px; }
+        .modal-btn { padding: 12px 28px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .modal-btn-cancel { background-color: #ecf0f1; color: #2c3e50; }
+        .modal-btn-cancel:hover { background-color: #bdc3c7; }
+        .modal-btn-submit { background: var(--sidebar-bg); color: white; }
+        .modal-btn-submit:hover { background: #2d6a42; }
+
+        .chart-modal { max-width: 800px; }
+        .chart-container { position: relative; height: 450px; margin: 25px 0; }
+
+        .toast {
+            position: fixed; bottom: 40px; right: 40px;
+            background: var(--sidebar-bg); color: white; padding: 18px 35px;
+            border-radius: 10px; font-size: 16px;
+            opacity: 0; transform: translateY(25px);
+            transition: all 0.35s; z-index: 3000;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            font-weight: 500;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background: var(--green-btn); }
+        .toast.error { background: var(--red-btn); }
+        .toast.warning { background: var(--medium-stock); }
+
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: var(--sidebar-bg); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2d6a42; }
+
+        .long-press-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(244, 164, 96, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
+
+        .long-press-hint.visible {
+            opacity: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- LOGIN VIEW -->
+<div class="login-view" id="loginView">
+    <div class="login-card">
+        <div class="login-logo">
+            <h1>ሶጃት ባልትና</h1>
+            <p>የኢትዮጵያ ባልትና እና ቅመሞች</p>
+        </div>
+        <div class="login-title">የሰራተኛ መግቢያ</div>
+        <div class="login-form-group">
+            <div class="manager-link-container">
+                <label style="margin: 0; color: #555; font-weight: 600; font-size: 15px;">ሰራተኛ ይምረጡ</label>
+                <a href="#" onclick="openManagerLogin(event)" class="manager-link">🔒 Manager Login</a>
+            </div>
+            <button class="employee-selector-btn" id="employeeSelectorBtn" onclick="openEmployeeModal()">
+                <span id="selectedEmployeeText">-- ሰራተኛ ይምረጡ --</span>
+                <span>▼</span>
+            </button>
+            <input type="hidden" id="selectedEmployeeId">
+        </div>
+        <div class="login-form-group">
+            <label for="loginPassword">የይለፍ ቃል</label>
+            <input type="password" id="loginPassword" placeholder="የይለፍ ቃል ያስገቡ" autocomplete="off">
+        </div>
+        <button class="login-btn" onclick="handleLogin()">ግባ</button>
+        
+        <div class="password-hint">
+            <strong>🔐 የይለፍ ቃል ለማግኘት አስተዳዳሪን ያግኙ</strong>
+            <p style="margin-top: 8px; font-size: 12px;">
+                እያንዳንዱ ሰራተኛ የራሱ የይለፍ ቃል አለው።<br>
+                የእርስዎን የይለፍ ቃል ማግኘት አስተዳዳሪውን ያግኙ
+            </p>
+            <p style="margin-top: 10px; font-size: 12px; color: #1565c0;">
+                <strong>Manager :</strong> welcome
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- CUSTOM EMPLOYEE SELECTION MODAL -->
+<div class="employee-modal-overlay" id="employeeModalOverlay">
+    <div class="employee-modal">
+        <div class="employee-modal-header">
+            <div class="employee-modal-title">ሰራተኛ ይምረጡ</div>
+            <button class="employee-modal-close" onclick="closeEmployeeModal()">×</button>
+        </div>
+        <div class="employee-modal-content" id="employeeModalContent">
+            <!-- Employee options generated by JS -->
+        </div>
+        <div class="employee-modal-footer">
+            <button class="employee-modal-done" onclick="confirmEmployeeSelection()">Done</button>
+        </div>
+    </div>
+</div>
+
+<div class="app-container" id="appContainer" style="display:none;">
+    
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-name">
+                <span>ሶጃት</span>
+                <span>ባልትና</span>
+            </div>
+            <button class="toggle-sidebar-btn" onclick="toggleSidebar()">☰</button>
+        </div>
+        
+        <div class="mode-toggle-container">
+            <div class="mode-toggle-label">☷ የዋጋ አይነት</div>
+            <div class="mode-switch">
+                <div class="mode-option active retail" id="modeRetail" onclick="setPricingMode('retail')">ችርቻሮ</div>
+                <div class="mode-option wholesale" id="modeWholesale" onclick="setPricingMode('wholesale')">ጅምላ</div>
+            </div>
+        </div>
+
+        <div class="sidebar-menu">
+            <div class="menu-item active" onclick="navigateTo('calculator')">
+                <div class="menu-item-icon">🧮</div>
+                <div class="menu-item-text">ካልኩሌተር</div>
+            </div>
+            <div class="menu-item disabled" id="inventoryMenu" onclick="navigateTo('inventory')">
+                <div class="menu-item-icon">📦</div>
+                <div class="menu-item-text">የእቃ መቆጣጠሪያ</div>
+            </div>
+            <div class="menu-item disabled" id="editProductsMenu" onclick="navigateTo('editProducts')">
+                <div class="menu-item-icon">✏️</div>
+                <div class="menu-item-text">እቃዎችን አስተካክል</div>
+            </div>
+            <div class="menu-item" onclick="navigateTo('salesRecord')">
+                <div class="menu-item-icon">📜</div>
+                <div class="menu-item-text">የሽያጩ መዝገብ</div>
+            </div>
+            <div class="menu-item disabled" id="incomeDayMenu" onclick="navigateTo('incomeDay')">
+                <div class="menu-item-icon">📅</div>
+                <div class="menu-item-text">ገቢ በቀን</div>
+            </div>
+            <div class="menu-item disabled" id="incomeMonthMenu" onclick="navigateTo('incomeMonth')">
+                <div class="menu-item-icon">🗓️</div>
+                <div class="menu-item-text">ገቢ በወር</div>
+            </div>
+            <div class="menu-item disabled">
+                <div class="menu-item-icon">📆</div>
+                <div class="menu-item-text">ገቢ በአመት</div>
+            </div>
+            <div style="height:2px; background:rgba(255,255,255,0.1); margin:15px 0;"></div>
+            <div class="menu-item" onclick="navigateTo('settings')">
+                <div class="menu-item-icon">⚙️</div>
+                <div class="menu-item-text">ቅንብሮች</div>
+            </div>
+            <div class="menu-item" onclick="showHelp()">
+                <div class="menu-item-icon">❓</div>
+                <div class="menu-item-text">እርዳታ</div>
+            </div>
+            <div class="menu-item" onclick="logout()">
+                <div class="menu-item-icon">🚪</div>
+                <div class="menu-item-text" style="color:#e74c3c;">ውጣ</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANAGER DASHBOARD -->
+    <div class="view-section" id="managerDashboardView">
+        <div class="manager-header">
+            <div class="manager-title">📊 የአስተዳዳሪ ዳሽቦርድ</div>
+            <button class="manager-logout-btn" onclick="logout()">ውጣ</button>
+        </div>
+        <div class="dashboard-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">የዛሬ ገቢ</div>
+                    <div class="stat-value" id="mgrTodayIncome">0 ብር</div>
+                    <div class="stat-sub" id="mgrTodaySalesCount">0 ሽያጭ</div>
+                </div>
+                <div class="stat-card profit">
+                    <div class="stat-label">ትርፍ</div>
+                    <div class="stat-value" id="mgrTodayProfit">0 ብር</div>
+                    <div class="stat-sub">በዛሬው ሽያጭ</div>
+                </div>
+                <div class="stat-card alert">
+                    <div class="stat-label">ዝቅተኛ መጠን</div>
+                    <div class="stat-value" id="mgrLowStockCount" style="color: var(--low-stock);">0</div>
+                    <div class="stat-sub">እቃዎች</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">ጠቅላላ እቃዎች</div>
+                    <div class="stat-value" id="mgrTotalItems">0</div>
+                    <div class="stat-sub">በመዝገቡ</div>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <div class="section-title">
+                    <span>👥 የሰራተኞች ዝርዝር - አስተዳዳሪ ብቻ</span>
+                </div>
+                <div class="report-table-wrapper">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>ሰራተኛ</th>
+                                <th>ሁኔታ</th>
+                                <th>ተግባር</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mgrEmployeeTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="dashboard-section">
+                <div class="section-title">
+                    <span>📦 የእቃ መጠን</span>
+                    <button class="filter-btn" onclick="navigateTo('editProducts')" style="font-size:13px; padding:6px 12px;">አስተካክል</button>
+                </div>
+                <div class="report-table-wrapper">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>እቃ</th>
+                                <th>አሃድ</th>
+                                <th>የግዢ ዋጋ</th>
+                                <th>የሽያጭ ዋጋ</th>
+                                <th>መጠን</th>
+                                <th>ሁኔታ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mgrStockTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="main-content" id="employeeMainContent">
+        
+        <!-- CALCULATOR VIEW -->
+        <div class="view-section active" id="calculatorView">
+            <div class="calc-header">
+                <div class="header-left">
+                    <button class="menu-toggle-btn" id="menuToggleBtn" onclick="toggleSidebar()">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div class="header-info">
+                        <div style="font-size:13px; color:#999;" id="calcDateDisplay"></div>
+                        <div class="user-display">
+                            <span id="currentUserDisplay">ተጠቃሚ</span>
+                            <span class="mode-badge retail" id="currentModeBadge">ችርቻሮ</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="total-display" id="mainDisplay">0</div>
+            </div>
+
+            <div class="control-bar">
+                <button class="ctrl-btn btn-c" onclick="clearDisplay()">C</button>
+                <button class="ctrl-btn btn-plus" id="btnPlus" onclick="setMode('add')">+</button>
+                <button class="ctrl-btn btn-minus" id="btnMinus" onclick="setMode('subtract')">−</button>
+                <button class="ctrl-btn btn-eq" onclick="goToChangeCalculator()">=</button>
+            </div>
+
+            <div class="content-area" id="contentArea"></div>
+        </div>
+
+        <!-- INVENTORY VIEW -->
+        <div class="view-section" id="inventoryView">
+            <div class="list-header">
+                <div class="report-top-bar">
+                    <div class="page-title">የእቃ መቆጣጠሪያ</div>
+                    <div style="display:flex; gap:15px;">
+                        <button class="filter-btn" onclick="adjustStock()" style="background:var(--brand-gold); color:white; border:none;">+ መጠን አስተካክል</button>
+                    </div>
+                </div>
+            </div>
+            <div class="report-table-container">
+                <div class="report-table-wrapper">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>እቃ</th>
+                                <th>አሃድ</th>
+                                <th>የችርቻሮ ዋጋ</th>
+                                <th>የጅምላ ዋጋ</th>
+                                <th>የአሁኑ መጠን</th>
+                                <th>ሁኔታ</th>
+                                <th>ተግባራት</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryList"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="report-footer">
+                ጠቅላላ እቃዎች <span id="totalProducts">0</span> | ዝቅተኛ መጠን፡ <span id="lowStockCount" style="color:var(--low-stock);">0</span>
+            </div>
+        </div>
+
+        <!-- EDIT PRODUCTS VIEW -->
+        <div class="view-section" id="editProductsView">
+            <div class="list-header">
+                <div class="report-top-bar">
+                    <div class="page-title">እቃዎችን አስተካክል</div>
+                    <button class="filter-btn" onclick="openAddProductModal()" style="background:var(--green-btn); color:white; border:none;">+ አዲስ እቃ</button>
+                </div>
+            </div>
+            <div class="report-table-container">
+                <div class="report-table-wrapper">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>ስም</th>
+                                <th>አሃድ</th>
+                                <th>ችርቻሮ</th>
+                                <th>ጅምላ</th>
+                                <th>መጠን</th>
+                                <th>ተግባራት</th>
+                            </tr>
+                        </thead>
+                        <tbody id="editProductsList"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SALES RECORD VIEW -->
+        <div class="view-section" id="salesRecordView">
+            <div class="list-header">
+                <div class="report-top-bar">
+                    <div class="page-title">የሽያጭ መዝገብ</div>
+                </div>
+            </div>
+            <div class="report-table-container">
+                <div class="report-table-wrapper">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>ቀን እና ሰዓት</th>
+                                <th>ተጠቃሚ</th>
+                                <th>አይነት</th>
+                                <th>ጠቅላላ</th>
+                                <th>ተግባር</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesRecordList"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- INCOME DAY VIEW -->
+        <div class="view-section" id="incomeDayView">
+            <div class="report-header">
+                <div class="report-top-bar">
+                    <div class="page-title">ጠቅላላ ገቢ (ቀን)</div>
+                    <div class="report-icons">
+                        <svg viewBox="0 0 24 24" onclick="exportCurrentViewToSpreadsheet()" title="ወደ CSV ላክ"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        <svg viewBox="0 0 24 24" onclick="generateCurrentViewChart()" title="ግራፍ"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z"/></svg>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="page-title" style="font-size:20px; color:#7f8c8d;">ቀን <span id="incomeDayDateDisplay"></span></div>
+                    <div class="report-filters">
+                        <div class="filter-btn">እቃ ▼</div>
+                        <div class="filter-btn">አደራጅ ▼</div>
+                    </div>
+                </div>
+            </div>
+            <div class="report-table-container">
+                <div class="report-table-wrapper">
+                    <table class="report-table">
+                        <thead><tr><th>እቃ</th><th>አሃድ</th><th>ገንዘብ</th></tr></thead>
+                        <tbody id="incomeDayTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="report-footer">
+                ጠቅላላ <span id="incomeDayTotalUnits">0</span> / <span id="incomeDayTotalMoney">0</span> ብር
+            </div>
+        </div>
+
+        <!-- INCOME MONTH VIEW -->
+        <div class="view-section" id="incomeMonthView">
+            <div class="report-header">
+                <div class="report-top-bar">
+                    <div class="page-title">ጠቅላላ ገቢ (ወር)</div>
+                    <div class="report-icons">
+                        <svg viewBox="0 0 24 24" onclick="exportCurrentViewToSpreadsheet()" title="ወደ CSV ላክ"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        <svg viewBox="0 0 24 24" onclick="generateCurrentViewChart()" title="ግራፍ"><path d="M11 2v20c-5.07-.5-9-4.79-9-10s3.93-9.5 9-10zm2.03 0v8.99H22c-.47-4.74-4.24-8.52-8.97-8.99zm0 11.01V22c4.74-.47 8.5-4.25 8.97-8.99h-8.97z"/></svg>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="page-title" style="font-size:20px; color:#7f8c8d;">በወር <span id="incomeMonthDateDisplay"></span></div>
+                    <div class="report-filters">
+                        <div class="filter-btn">እቃ ▼</div>
+                        <div class="filter-btn">አደራጅ ▼</div>
+                    </div>
+                </div>
+            </div>
+            <div class="report-table-container">
+                <div class="report-table-wrapper">
+                    <table class="report-table">
+                        <thead><tr><th>እቃ</th><th>አሃድ</th><th>ገንዘብ</th></tr></thead>
+                        <tbody id="incomeMonthTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="report-footer">
+                ጠቅላላ <span id="incomeMonthTotalUnits">0</span> / <span id="incomeMonthTotalMoney">0</span> ብር
+            </div>
+        </div>
+
+        <!-- SETTINGS VIEW -->
+        <div class="view-section" id="settingsView">
+            <div class="list-header">
+                <div class="report-top-bar">
+                    <div class="page-title">ቅንብሮች</div>
+                </div>
+            </div>
+            <div class="report-table-container">
+                <div class="report-table-wrapper" style="padding:30px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:20px; border-bottom:2px solid #eee;">
+                        <div>
+                            <div style="font-weight:600; font-size:17px;">የመረጃ ቅጂ አውጣ</div>
+                            <div style="font-size:14px; color:#999; margin-top:5px;">ሁሉንም መረጃ እንደ JSON አውርድ</div>
+                        </div>
+                        <button class="filter-btn" onclick="backupData()">ቅጂ</button>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:20px;">
+                        <div>
+                            <div style="font-weight:600; font-size:17px; color:#e74c3c;">ሁሉንም መረጃ አጥፋ</div>
+                            <div style="font-size:14px; color:#999; margin-top:5px;">መተግበሪያውን ወደ መነሻ ተመለስ</div>
+                        </div>
+                        <button class="filter-btn" style="background:#e74c3c; color:white; border:none;" onclick="clearAllData()">ተመልስ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHANGE CALCULATOR VIEW -->
+        <div class="view-section" id="changeView">
+            <div class="change-view" style="padding:0; background:transparent;">
+                <div class="change-card">
+                    <h2 style="color:#7f8c8d; margin-bottom:15px; font-size:24px;">💵 መልስ ካልኩሌተር</h2>
+                    <div class="change-total-display"><span id="changeTotalAmount">0</span> ብር</div>
+                    
+                    <div style="text-align:left; margin-bottom:10px; color:#555; font-weight:500;">ከደንበኛ የተቀበለው መጠን</div>
+                    <input type="number" id="amountReceived" class="change-input" placeholder="መጠን ያስገቡ (ብር)" oninput="calculateChange()" autofocus>
+                    
+                    <div class="change-result-box">
+                        <div class="change-result-label">ለደንበኛ የሚመለስ ትርፍ</div>
+                        <div class="change-result-value" id="changeResult">0 ብር</div>
+                    </div>
+                    
+                    <div class="change-buttons">
+                        <button class="action-btn-large btn-secondary" onclick="navigateTo('calculator')">← ተመለስ</button>
+                        <button class="action-btn-large btn-primary" onclick="confirmTransaction()">✓ አረጋግጥ እና አስቀምጥ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- OTHER MODALS -->
+<div class="modal-overlay" id="managerLoginModal">
+    <div class="modal" style="width: 400px;">
+        <h2>🔒 የአስተዳዳሪ መግቢያ</h2>
+        <div class="form-group">
+            <label for="managerPassword">የአስተዳዳሪ የይለፍ ቃል</label>
+            <input type="password" id="managerPassword" placeholder="Password" onkeypress="if(event.key==='Enter') handleManagerLogin()">
+        </div>
+        <div class="modal-buttons" style="justify-content: center;">
+            <button class="modal-btn modal-btn-cancel" onclick="closeManagerLogin()">ሰርዝ</button>
+            <button class="modal-btn modal-btn-submit" onclick="handleManagerLogin()">ግባ</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="editEmpPasswordModal">
+    <div class="modal" style="width: 400px;">
+        <h2>የይለፍ ቃል አስተካክል</h2>
+        <div class="form-group">
+            <label>ሰራተኛ</label>
+            <input type="text" id="editEmpName" disabled style="background:#f0f0f0;">
+            <input type="hidden" id="editEmpId">
+        </div>
+        <div class="form-group">
+            <label for="newEmpPassword">አዲስ የይለፍ ቃል</label>
+            <input type="password" id="newEmpPassword" placeholder="New Password">
+        </div>
+        <div class="modal-buttons" style="justify-content: center;">
+            <button class="modal-btn modal-btn-cancel" onclick="closeEditEmpPassword()">ሰርዝ</button>
+            <button class="modal-btn modal-btn-submit" onclick="saveEmpPassword()">አስቀምጥ</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="manualQuantityModal">
+    <div class="modal" style="width: 450px;">
+        <h2>📝 የእቃ መጠን ያስገቡ</h2>
+        <div class="form-group">
+            <label>እቃ</label>
+            <input type="text" id="manualProductInfo" disabled style="background:#f0f0f0; font-weight:600;">
+            <input type="hidden" id="manualProductId">
+            <input type="hidden" id="manualProductPrice">
+        </div>
+        <div class="form-group">
+            <label for="manualQuantity">መጠን (Quantity)</label>
+            <input type="number" id="manualQuantity" placeholder="መጠን ያስገቡ" min="1" max="1000">
+        </div>
+        <div class="form-group">
+            <label>ጠቅላላ ዋጋ</label>
+            <input type="text" id="manualTotalPrice" disabled style="background:#f0f0f0; font-size:20px; font-weight:700; color:var(--brand-gold);">
+        </div>
+        <div class="modal-buttons" style="justify-content: center; gap: 20px;">
+            <button class="modal-btn modal-btn-cancel" onclick="closeManualQuantity()">ሰርዝ</button>
+            <button class="modal-btn modal-btn-submit" onclick="confirmManualQuantity()">✓ አረጋግጥ</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <h2 id="modalTitle">አዲስ እቃ ጨምር/አስተካክል</h2>
+        <div class="form-group">
+            <label for="productName">የእቃው ስም</label>
+            <input type="text" id="productName" placeholder="የእቃውን ስም ያስገቡ">
+        </div>
+        <div class="form-group">
+            <label for="productUnit">አሃድ</label>
+            <input type="text" id="productUnit" placeholder="ለምሳሌ፡ በኪሎ፣ በ100ግ">
+        </div>
+        <div class="form-group">
+            <label for="productCostPrice">የግዢ ዋጋ (Cost Price)</label>
+            <input type="number" id="productCostPrice" placeholder="የግዢ ዋጋ ያስገቡ" min="0">
+        </div>
+        <div class="form-group">
+            <label for="productRetailPrice">የችርቻሮ ዋጋ (Retail)</label>
+            <input type="number" id="productRetailPrice" placeholder="የችርቻሮ ዋጋ ያስገቡ" min="0">
+        </div>
+        <div class="form-group">
+            <label for="productWholesalePrice">የጅምላ ዋጋ (Wholesale)</label>
+            <input type="number" id="productWholesalePrice" placeholder="የጅምላ ዋጋ ያስገቡ" min="0">
+        </div>
+        <div class="form-group">
+            <label for="productStock">የመጀመሪያ መጠን</label>
+            <input type="number" id="productStock" placeholder="የእቃ መጠን ያስገቡ" min="0">
+        </div>
+        <input type="hidden" id="editProductId">
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeModal()">ሰርዝ</button>
+            <button class="modal-btn modal-btn-submit" onclick="saveProduct()">አስቀምጥ</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="stockModalOverlay">
+    <div class="modal">
+        <h2>የእቃ መጠን አስተካክል</h2>
+        <div class="form-group">
+            <label for="stockProduct">እቃ ይምረጡ</label>
+            <select id="stockProduct"></select>
+        </div>
+        <div class="form-group">
+            <label for="stockAdjustment">የማስተካከያ መጠን</label>
+            <input type="number" id="stockAdjustment" placeholder="መጠን ያስገቡ" min="-10000">
+        </div>
+        <div class="form-group">
+            <label for="stockReason">ምክንያት (አማራጭ)</label>
+            <input type="text" id="stockReason" placeholder="ለምሳሌ፡ አዲስ ግዢ፣ ተበላሽቷል">
+        </div>
+        <input type="hidden" id="stockAdjustId">
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeStockModal()">ሰርዝ</button>
+            <button class="modal-btn modal-btn-submit" onclick="saveStockAdjustment()">አስተካክል</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="chartModalOverlay">
+    <div class="modal chart-modal">
+        <h2>የገቢ ግራፍ - ሶጃት ባልትና</h2>
+        <div class="chart-container"><canvas id="incomeChart"></canvas></div>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-btn-cancel" onclick="closeChartModal()">ዝጋ</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="infoModalOverlay">
+    <div class="modal">
+        <h2 id="infoModalTitle">መረጃ</h2>
+        <p id="infoModalContent" style="text-align:center; color:#555; line-height:1.8; font-size:16px;"></p>
+        <div class="modal-buttons" style="justify-content:center; margin-top:30px;">
+            <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('infoModalOverlay').classList.remove('active')">ተስማምቻለሁ</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // Global variables
+    let employees = [];
+    let products = [];
+    let transactions = {};
+    let salesHistory = []; 
+    let stockHistory = [];
+    let dailyIncomeRecords = {};
+    let currentTotal = 0;
+    let currentMode = null;
+    let nextId = 1;
+    let chartInstance = null;
+    let currentViewData = [];
+    let currentUser = null;
+    let pricingMode = 'retail';
+    
+    let quickClickTimer = null;
+    let longPressTimer = null;
+    let longPressStartTime = 0;
+    let longPressProgressInterval = null;
+    let wasLongPress = false;
+    
+    let selectedEmployeeId = null;
+    let tempSelectedEmployeeId = null;
+
+    const LOW_STOCK_THRESHOLD = 20;
+    const MEDIUM_STOCK_THRESHOLD = 50;
+
+    const displayElement = document.getElementById('mainDisplay');
+    const contentArea = document.getElementById('contentArea');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const stockModalOverlay = document.getElementById('stockModalOverlay');
+    const chartModalOverlay = document.getElementById('chartModalOverlay');
+    const calcDateDisplay = document.getElementById('calcDateDisplay');
+    const toast = document.getElementById('toast');
+    const btnPlus = document.getElementById('btnPlus');
+    const btnMinus = document.getElementById('btnMinus');
+    const sidebar = document.getElementById('sidebar');
+    const menuToggleBtn = document.getElementById('menuToggleBtn');
+    const currentUserDisplay = document.getElementById('currentUserDisplay');
+    const currentModeBadge = document.getElementById('currentModeBadge');
+    const amountReceivedInput = document.getElementById('amountReceived');
+    const changeResultDisplay = document.getElementById('changeResult');
+    const changeTotalAmountDisplay = document.getElementById('changeTotalAmount');
+    const employeeMainContent = document.getElementById('employeeMainContent');
+
+    // Load data from DATABASE
+    async function loadSavedData() {
+        try {
+            // Load employees
+            const empResponse = await fetch('/api/employees');
+            const dbEmployees = await empResponse.json();
+            if (dbEmployees.length > 0) {
+                employees = dbEmployees.map(emp => ({
+                    id: emp.id,
+                    name: emp.username,
+                    password: emp.password
+                }));
+            }
+
+            // Load products
+            const prodResponse = await fetch('/api/items');
+            const dbProducts = await prodResponse.json();
+            if (dbProducts.length > 0) {
+                products = dbProducts.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    unit: p.unit,
+                    costPrice: parseFloat(p.cost_price),
+                    retailPrice: parseFloat(p.retail_price),
+                    wholesalePrice: parseFloat(p.wholesale_price),
+                    stock: parseInt(p.quantity)
+                }));
+                nextId = Math.max(...products.map(p => p.id)) + 1;
+            }
+
+            // Load sales
+            const salesResponse = await fetch('/api/sales');
+            const dbSales = await salesResponse.json();
+            if (dbSales.length > 0) {
+                salesHistory = dbSales.map(s => ({
+                    id: s.id,
+                    date: s.sale_date.split('T')[0],
+                    time: s.sale_date.split('T')[1].split('.')[0],
+                    user: 'Employee',
+                    mode: s.sale_type,
+                    items: {},
+                    total: parseFloat(s.total_amount),
+                    totalUnits: parseInt(s.quantity)
+                }));
+            }
+
+            console.log('✅ Loaded from database:', { employees: employees.length, products: products.length, sales: salesHistory.length });
+        } catch (e) {
+            console.error('Error loading from database:', e);
+        }
+    }
+
+    // Save data function (now empty - data saved via API)
+    function saveData() {
+        // Data is now saved directly to the database via API calls!
+    }
+
+    // Save daily income
+    function saveDailyIncome(dateStr, transactionData) {
+        if (!dailyIncomeRecords[dateStr]) {
+            dailyIncomeRecords[dateStr] = {
+                date: dateStr,
+                transactions: [],
+                totalUnits: 0,
+                totalMoney: 0,
+                items: {}
+            };
+        }
+
+        dailyIncomeRecords[dateStr].transactions.push(transactionData);
+        dailyIncomeRecords[dateStr].totalUnits += transactionData.totalUnits;
+        dailyIncomeRecords[dateStr].totalMoney += transactionData.total;
+
+        for (const [productId, count] of Object.entries(transactionData.items)) {
+            if (!dailyIncomeRecords[dateStr].items[productId]) {
+                dailyIncomeRecords[dateStr].items[productId] = 0;
+            }
+            dailyIncomeRecords[dateStr].items[productId] += count;
+        }
+    }
+
+    // Open employee selection modal
+    function openEmployeeModal() {
+        const modalContent = document.getElementById('employeeModalContent');
+        modalContent.innerHTML = '';
+        
+        employees.forEach(emp => {
+            const option = document.createElement('div');
+            option.className = 'employee-option';
+            if (emp.id === selectedEmployeeId) {
+                option.classList.add('selected');
+                tempSelectedEmployeeId = emp.id;
+            }
+            
+            option.innerHTML = `
+                <div class="employee-radio"></div>
+                <div class="employee-name">${emp.name}</div>
+            `;
+            
+            option.onclick = () => selectEmployeeInModal(emp.id, option);
+            modalContent.appendChild(option);
+        });
+        
+        document.getElementById('employeeModalOverlay').classList.add('active');
+    }
+
+    // Select employee in modal
+    function selectEmployeeInModal(empId, optionElement) {
+        document.querySelectorAll('.employee-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        
+        optionElement.classList.add('selected');
+        tempSelectedEmployeeId = empId;
+    }
+
+    // Confirm employee selection
+    function confirmEmployeeSelection() {
+        if (tempSelectedEmployeeId) {
+            selectedEmployeeId = tempSelectedEmployeeId;
+            const employee = employees.find(e => e.id === selectedEmployeeId);
+            document.getElementById('selectedEmployeeText').textContent = employee.name;
+            document.getElementById('selectedEmployeeId').value = employee.id;
+            document.getElementById('employeeSelectorBtn').classList.add('selected');
+        }
+        closeEmployeeModal();
+    }
+
+    // Close employee modal
+    function closeEmployeeModal() {
+        document.getElementById('employeeModalOverlay').classList.remove('active');
+        tempSelectedEmployeeId = null;
+    }
+
+    // Handle login
+    async function handleLogin() {
+        const passwordInput = document.getElementById('loginPassword').value.trim();
+        
+        if (!selectedEmployeeId) {
+            showToast('እባክዎ ሰራተኛ ይምረጡ', 'error');
+            return;
+        }
+        
+        if (!passwordInput) {
+            showToast('የይለፍ ቃል ያስገቡ', 'error');
+            return;
+        }
+        
+        const user = employees.find(e => e.id === selectedEmployeeId);
+        
+        if (user && user.password === passwordInput) {
+            currentUser = user;
+            currentUserDisplay.textContent = user.name;
+            
+            await loadSavedData();
+            
+            document.getElementById('loginView').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'flex';
+            
+            if (user.name === 'Manager') {
+                document.getElementById('inventoryMenu').classList.remove('disabled');
+                document.getElementById('editProductsMenu').classList.remove('disabled');
+                document.getElementById('incomeDayMenu').classList.remove('disabled');
+                document.getElementById('incomeMonthMenu').classList.remove('disabled');
+                
+                document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+                document.getElementById('managerDashboardView').classList.add('active');
+                renderManagerDashboard();
+            } else {
+                document.getElementById('inventoryMenu').classList.add('disabled');
+                document.getElementById('editProductsMenu').classList.add('disabled');
+                document.getElementById('incomeDayMenu').classList.add('disabled');
+                document.getElementById('incomeMonthMenu').classList.add('disabled');
+                
+                document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+                document.getElementById('calculatorView').classList.add('active');
+            }
+            
+            setDate();
+            renderProducts();
+            updateDisplay();
+            checkLowStock();
+            showToast(`እንኳን ደህና መጡ ወደ ሶጃት ባልትና ${user.name}!`, 'success');
+        } else {
+            showToast('የተሳሳተ የይለፍ ቃል', 'error');
+        }
+    }
+
+    // Open manager login
+    function openManagerLogin(event) {
+        event.preventDefault();
+        document.getElementById('managerLoginModal').classList.add('active');
+        document.getElementById('managerPassword').value = '';
+        document.getElementById('managerPassword').focus();
+    }
+
+    // Close manager login
+    function closeManagerLogin() {
+        document.getElementById('managerLoginModal').classList.remove('active');
+    }
+
+    // Handle manager login
+    async function handleManagerLogin() {
+        const password = document.getElementById('managerPassword').value.trim();
+        
+        if (password === 'admin123') {
+            closeManagerLogin();
+            currentUser = { name: 'Manager', id: 0 };
+            
+            await loadSavedData();
+            
+            document.getElementById('loginView').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'flex';
+            
+            document.getElementById('inventoryMenu').classList.remove('disabled');
+            document.getElementById('editProductsMenu').classList.remove('disabled');
+            document.getElementById('incomeDayMenu').classList.remove('disabled');
+            document.getElementById('incomeMonthMenu').classList.remove('disabled');
+            
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('managerDashboardView').classList.add('active');
+            renderManagerDashboard();
+            
+            showToast('እንኳን ደህና መጡ ወደ ሶጃት ባልትና፣ Manager!', 'success');
+        } else {
+            showToast('የተሳሳተ የአስተዳዳሪ የይለፍ ቃል', 'error');
+        }
+    }
+
+    // Render manager dashboard
+    function renderManagerDashboard() {
+        const todayStr = setDate().dateStr;
+        const todayRecord = dailyIncomeRecords[todayStr];
+        
+        const todayIncome = todayRecord ? todayRecord.totalMoney : 0;
+        const todayUnits = todayRecord ? todayRecord.totalUnits : 0;
+        
+        let todayProfit = 0;
+        if (todayRecord && todayRecord.items) {
+            for (const [pid, count] of Object.entries(todayRecord.items)) {
+                const product = products.find(p => p.id == pid);
+                if (product) {
+                    const profitPerUnit = product.retailPrice - product.costPrice;
+                    todayProfit += (profitPerUnit * count);
+                }
+            }
+        }
+
+        const lowStockItems = products.filter(p => p.stock <= LOW_STOCK_THRESHOLD).length;
+
+        document.getElementById('mgrTodayIncome').textContent = todayIncome.toLocaleString() + ' ብር';
+        document.getElementById('mgrTodaySalesCount').textContent = todayUnits + ' ሽያጭ';
+        document.getElementById('mgrTodayProfit').textContent = todayProfit.toLocaleString() + ' ብር';
+        document.getElementById('mgrLowStockCount').textContent = lowStockItems;
+        document.getElementById('mgrTotalItems').textContent = products.length;
+
+        // Show employee list
+        const empTbody = document.getElementById('mgrEmployeeTableBody');
+        if (empTbody) {
+            empTbody.innerHTML = '';
+            employees.forEach(emp => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${emp.name}</td>
+                    <td><span class="stock-status good">Active</span></td>
+                    <td>
+                        <button class="filter-btn" style="padding:4px 8px; font-size:12px;" onclick="openEditEmpPassword(${emp.id}, '${emp.name}')">ቀይር</button>
+                    </td>
+                `;
+                empTbody.appendChild(tr);
+            });
+        }
+
+        // Show stock table
+        const tbody = document.getElementById('mgrStockTableBody');
+        if (tbody) {
+            tbody.innerHTML = '';
+            products.forEach(p => {
+                const status = getStockStatus(p.stock);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:600;">${p.name}</td>
+                    <td>${p.unit}</td>
+                    <td>${p.costPrice}</td>
+                    <td>${p.retailPrice}</td>
+                    <td style="font-weight:bold;">${p.stock}</td>
+                    <td><span class="stock-status ${status.class}">${status.label}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }
+
+    // Open edit employee password
+    function openEditEmpPassword(id, name) {
+        document.getElementById('editEmpId').value = id;
+        document.getElementById('editEmpName').value = name;
+        document.getElementById('newEmpPassword').value = '';
+        document.getElementById('editEmpPasswordModal').classList.add('active');
+    }
+
+    // Close edit employee password
+    function closeEditEmpPassword() {
+        document.getElementById('editEmpPasswordModal').classList.remove('active');
+    }
+
+    // Save employee password
+    async function saveEmpPassword() {
+        const id = parseInt(document.getElementById('editEmpId').value);
+        const newPass = document.getElementById('newEmpPassword').value.trim();
+        
+        if (!newPass) {
+            showToast('የይለፍ ቃል መኖር አለበት', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/employees/${id}/password`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: newPass })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                const emp = employees.find(e => e.id === id);
+                if (emp) emp.password = newPass;
+                renderManagerDashboard();
+                closeEditEmpPassword();
+                showToast(`የ${emp.name} የይለፍ ቃል ተቀይሯል`, 'success');
+            }
+        } catch (error) {
+            showToast('ስህተት አጋጥሟል', 'error');
+        }
+    }
+
+    // Logout
+    function logout() {
+        currentUser = null;
+        currentTotal = 0;
+        transactions = {};
+        currentMode = null;
+        document.getElementById('loginPassword').value = '';
+        document.getElementById('managerPassword').value = '';
+        document.getElementById('appContainer').style.display = 'none';
+        document.getElementById('loginView').style.display = 'flex';
+        showToast('በተሳካ ሁኔታ ወጥተዋል', 'success');
+    }
+
+    // Toggle sidebar
+    function toggleSidebar() {
+        sidebar.classList.toggle('collapsed');
+        menuToggleBtn.classList.toggle('active');
+    }
+
+    // Set pricing mode
+    function setPricingMode(mode) {
+        pricingMode = mode;
+        document.getElementById('modeRetail').classList.toggle('active', mode === 'retail');
+        document.getElementById('modeWholesale').classList.toggle('active', mode === 'wholesale');
+        currentModeBadge.textContent = mode === 'retail' ? 'ችርቻሮ' : 'ጅምላ';
+        currentModeBadge.className = `mode-badge ${mode}`;
+        if (document.getElementById('calculatorView').classList.contains('active')) {
+            renderProducts();
+        }
+        showToast(`ወደ ${mode === 'retail' ? 'ችርቻሮ' : 'ጅምላ'} ዋጋ ተቀይሯል`, 'success');
+    }
+
+    // Set date
+    function setDate() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        calcDateDisplay.textContent = dateStr;
+        const incomeDayDateDisplay = document.getElementById('incomeDayDateDisplay');
+        const incomeMonthDateDisplay = document.getElementById('incomeMonthDateDisplay');
+        if (incomeDayDateDisplay) incomeDayDateDisplay.textContent = dateStr;
+        if (incomeMonthDateDisplay) incomeMonthDateDisplay.textContent = `${year}-${month}`;
+        return { dateStr, timeStr: now.toLocaleTimeString() };
+    }
+
+    // Navigate to view
+    function navigateTo(viewId) {
+        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+        
+        if(viewId === 'calculator') document.querySelectorAll('.menu-item')[0].classList.add('active');
+        if(viewId === 'inventory') document.querySelectorAll('.menu-item')[1].classList.add('active');
+        if(viewId === 'editProducts') document.querySelectorAll('.menu-item')[2].classList.add('active');
+        if(viewId === 'salesRecord') document.querySelectorAll('.menu-item')[3].classList.add('active');
+        if(viewId === 'incomeDay') document.querySelectorAll('.menu-item')[4].classList.add('active');
+        if(viewId === 'incomeMonth') document.querySelectorAll('.menu-item')[5].classList.add('active');
+        if(viewId === 'settings') document.querySelectorAll('.menu-item')[8].classList.add('active');
+
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        
+        if (viewId === 'calculator') {
+            document.getElementById('calculatorView').classList.add('active');
+            renderProducts();
+        } else if (viewId === 'inventory') {
+            document.getElementById('inventoryView').classList.add('active');
+            renderInventory();
+        } else if (viewId === 'change') {
+            document.getElementById('changeView').classList.add('active');
+            changeTotalAmountDisplay.textContent = currentTotal;
+            amountReceivedInput.value = '';
+            changeResultDisplay.textContent = '0 ብር';
+            changeResultDisplay.style.color = 'var(--green-btn)';
+            setTimeout(() => amountReceivedInput.focus(), 100);
+        } else if (viewId === 'editProducts') {
+            document.getElementById('editProductsView').classList.add('active');
+            renderEditProductsList();
+        } else if (viewId === 'salesRecord') {
+            document.getElementById('salesRecordView').classList.add('active');
+            renderSalesRecord();
+        } else if (viewId === 'incomeDay') {
+            document.getElementById('incomeDayView').classList.add('active');
+            renderIncomeReport('day');
+        } else if (viewId === 'incomeMonth') {
+            document.getElementById('incomeMonthView').classList.add('active');
+            renderIncomeReport('month');
+        } else if (viewId === 'settings') {
+            document.getElementById('settingsView').classList.add('active');
+        }
+    }
+
+    // Set mode (add/subtract)
+    function setMode(mode) {
+        if (currentMode === mode) {
+            currentMode = null;
+            btnPlus.classList.remove('active-mode');
+            btnMinus.classList.remove('active-mode');
+        } else {
+            currentMode = mode;
+            if (mode === 'add') {
+                btnPlus.classList.add('active-mode');
+                btnMinus.classList.remove('active-mode');
+            } else {
+                btnMinus.classList.add('active-mode');
+                btnPlus.classList.remove('active-mode');
+            }
+        }
+    }
+
+    // Get current price based on mode
+    function getCurrentPrice(product) {
+        return pricingMode === 'retail' ? product.retailPrice : product.wholesalePrice;
+    }
+
+    // Get stock status
+    function getStockStatus(stock) {
+        if (stock <= 0) return { class: 'low', label: 'ተጨርሷል' };
+        if (stock <= LOW_STOCK_THRESHOLD) return { class: 'low', label: 'ዝቅተኛ' };
+        if (stock <= MEDIUM_STOCK_THRESHOLD) return { class: 'medium', label: 'መካከለኛ' };
+        return { class: 'good', label: 'አለ' };
+    }
+
+    // Check low stock
+    function checkLowStock() {
+        const lowStockItems = products.filter(p => p.stock <= LOW_STOCK_THRESHOLD);
+        if (lowStockItems.length > 0) {
+            showToast(`${lowStockItems.length} እቃ(ዎች) መጠኑ ዝቅተኛ ነው!`, 'warning');
+        }
+    }
+
+    // Start long press
+    function startLongPress(productId, event) {
+        event.preventDefault();
+        wasLongPress = false;
+        
+        const itemCell = document.getElementById(`item-${productId}`);
+        if (!itemCell || !currentMode) return;
+        
+        clearLongPress();
+        
+        longPressStartTime = Date.now();
+        itemCell.classList.add('holding');
+        
+        let progressBar = itemCell.querySelector('.long-press-progress');
+        if (!progressBar) {
+            progressBar = document.createElement('div');
+            progressBar.className = 'long-press-progress';
+            itemCell.appendChild(progressBar);
+        }
+        
+        let hint = itemCell.querySelector('.long-press-hint');
+        if (!hint) {
+            hint = document.createElement('div');
+            hint.className = 'long-press-hint';
+            hint.textContent = 'ለመጠን ያዙ...';
+            itemCell.appendChild(hint);
+        }
+        hint.classList.add('visible');
+        
+        quickClickTimer = setTimeout(() => {
+            longPressTimer = setTimeout(() => {
+                wasLongPress = true;
+                clearLongPress();
+                openManualQuantity(productId);
+            }, 3000 - 500);
+        }, 500);
+        
+        longPressProgressInterval = setInterval(() => {
+            const elapsed = Date.now() - longPressStartTime;
+            const progress = (elapsed / 3000) * 100;
+            progressBar.style.width = `${Math.min(progress, 100)}%`;
+        }, 50);
+    }
+
+    // End long press
+    function endLongPress(event) {
+        if (event) event.preventDefault();
+        
+        if (quickClickTimer && !wasLongPress) {
+            clearTimeout(quickClickTimer);
+            clearTimeout(longPressTimer);
+            clearLongPress();
+            
+            const productId = parseInt(event.currentTarget.id.replace('item-', ''));
+            handleQuickClick(productId);
+        } else {
+            clearLongPress();
+        }
+    }
+
+    // Clear long press
+    function clearLongPress() {
+        if (quickClickTimer) {
+            clearTimeout(quickClickTimer);
+            quickClickTimer = null;
+        }
+        if (longPressTimer) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+        }
+        if (longPressProgressInterval) {
+            clearInterval(longPressProgressInterval);
+            longPressProgressInterval = null;
+        }
+        
+        document.querySelectorAll('.item-cell.holding').forEach(cell => {
+            cell.classList.remove('holding');
+            const progressBar = cell.querySelector('.long-press-progress');
+            if (progressBar) progressBar.style.width = '0%';
+            const hint = cell.querySelector('.long-press-hint');
+            if (hint) hint.classList.remove('visible');
+        });
+    }
+
+    // Render products
+    function renderProducts() {
+        contentArea.innerHTML = '';
+        products.forEach(product => {
+            const itemCell = document.createElement('div');
+            itemCell.className = 'item-cell';
+            itemCell.id = `item-${product.id}`;
+            
+            if (product.stock <= LOW_STOCK_THRESHOLD) {
+                itemCell.classList.add('low-stock');
+            }
+            
+            itemCell.onmousedown = (e) => startLongPress(product.id, e);
+            itemCell.onmouseup = (e) => endLongPress(e);
+            itemCell.onmouseleave = (e) => endLongPress(e);
+            itemCell.ontouchstart = (e) => startLongPress(product.id, e);
+            itemCell.ontouchend = (e) => endLongPress(e);
+            itemCell.oncontextmenu = (e) => e.preventDefault();
+
+            const itemName = document.createElement('div');
+            itemName.className = 'item-name';
+            itemName.textContent = product.name;
+
+            const itemUnit = document.createElement('div');
+            itemUnit.className = 'item-unit';
+            itemUnit.textContent = product.unit;
+
+            const itemValue = document.createElement('div');
+            itemValue.className = 'item-value';
+            itemValue.textContent = getCurrentPrice(product);
+
+            const stockStatus = getStockStatus(product.stock);
+            const stockIndicator = document.createElement('div');
+            stockIndicator.className = `stock-indicator ${stockStatus.class}`;
+            stockIndicator.textContent = `መጠን ${product.stock}`;
+            itemCell.appendChild(stockIndicator);
+
+            const count = transactions[product.id] || 0;
+            if (count > 0) {
+                const itemCount = document.createElement('div');
+                itemCount.className = 'item-count';
+                itemCount.textContent = count;
+                itemCell.appendChild(itemCount);
+            }
+
+            itemCell.appendChild(itemName);
+            itemCell.appendChild(itemUnit);
+            itemCell.appendChild(itemValue);
+            contentArea.appendChild(itemCell);
+        });
+
+        const addBtn = document.createElement('button');
+        addBtn.className = 'add-product-btn';
+        addBtn.innerHTML = '<span>+</span> አዲስ እቃ ጨምር';
+        addBtn.onclick = openAddProductModal;
+        contentArea.appendChild(addBtn);
+    }
+
+    // Handle quick click
+    function handleQuickClick(productId) {
+        if (!currentMode) {
+            showToast('መጀመሪያ + ወይም − ይጫኑ', 'error');
+            return;
+        }
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+
+        if (currentMode === 'add') {
+            if (product.stock <= 0) {
+                showToast(`እቃው ተጨርሷል፡ ${product.name}`, 'error');
+                return;
+            }
+            if (transactions[productId] && transactions[productId] >= product.stock) {
+                showToast(`${product.stock} እቃዎች ብቻ አሉ!`, 'error');
+                return;
+            }
+        }
+
+        const itemCell = document.getElementById(`item-${productId}`);
+        const price = getCurrentPrice(product);
+
+        if (currentMode === 'add') {
+            if (!transactions[productId]) transactions[productId] = 0;
+            transactions[productId]++;
+            currentTotal += price;
+            itemCell.classList.add('selected');
+            setTimeout(() => itemCell.classList.remove('selected'), 200);
+        } else if (currentMode === 'subtract') {
+            if (transactions[productId] && transactions[productId] > 0) {
+                transactions[productId]--;
+                currentTotal -= price;
+                if (transactions[productId] === 0) delete transactions[productId];
+                itemCell.classList.add('selected');
+                setTimeout(() => itemCell.classList.remove('selected'), 200);
+            } else {
+                showToast('ለመቀነስ ምንም የለም!', 'error');
+                return;
+            }
+        }
+        updateDisplay();
+        renderProducts();
+    }
+
+    // Open manual quantity
+    function openManualQuantity(productId) {
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+        
+        const price = getCurrentPrice(product);
+        document.getElementById('manualProductId').value = productId;
+        document.getElementById('manualProductInfo').value = `${product.name} (${product.unit}) - ${price} ብር`;
+        document.getElementById('manualProductPrice').value = price;
+        document.getElementById('manualQuantity').value = '';
+        document.getElementById('manualTotalPrice').value = '0 ብር';
+        
+        document.getElementById('manualQuantityModal').classList.add('active');
+        document.getElementById('manualQuantity').focus();
+    }
+
+    // Close manual quantity
+    function closeManualQuantity() {
+        document.getElementById('manualQuantityModal').classList.remove('active');
+    }
+
+    // Confirm manual quantity
+    function confirmManualQuantity() {
+        const productId = parseInt(document.getElementById('manualProductId').value);
+        const quantity = parseInt(document.getElementById('manualQuantity').value);
+        const price = parseInt(document.getElementById('manualProductPrice').value);
+        
+        if (!quantity || quantity <= 0) {
+            showToast('ትክክለኛ መጠን ያስገቡ', 'error');
+            return;
+        }
+        
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+        
+        if (currentMode !== 'add') {
+            showToast('መጀመሪያ + ይጫኑ', 'error');
+            closeManualQuantity();
+            return;
+        }
+        
+        if (product.stock <= 0) {
+            showToast(`እቃው ተጨርሷል ${product.name}`, 'error');
+            closeManualQuantity();
+            return;
+        }
+        
+        const currentQty = transactions[productId] || 0;
+        if (currentQty + quantity > product.stock) {
+            showToast(`ከ${product.stock} በላይ መጨመር አይቻልም!`, 'error');
+            closeManualQuantity();
+            return;
+        }
+        
+        transactions[productId] = currentQty + quantity;
+        currentTotal += (price * quantity);
+        
+        updateDisplay();
+        renderProducts();
+        closeManualQuantity();
+        showToast(`${quantity} ${product.name} ተጨምሯል!`, 'success');
+    }
+
+    // Manual quantity input listener
+    document.getElementById('manualQuantity').addEventListener('input', function() {
+        const quantity = parseInt(this.value) || 0;
+        const price = parseInt(document.getElementById('manualProductPrice').value) || 0;
+        const total = quantity * price;
+        document.getElementById('manualTotalPrice').value = total.toLocaleString() + ' ብር';
+    });
+
+    // Render inventory
+    function renderInventory() {
+        const list = document.getElementById('inventoryList');
+        list.innerHTML = '';
+        
+        let lowStockCount = 0;
+        
+        products.forEach(product => {
+            const stockStatus = getStockStatus(product.stock);
+            if (stockStatus.class === 'low') lowStockCount++;
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:600;">${product.name}</td>
+                <td>${product.unit}</td>
+                <td>${product.retailPrice}</td>
+                <td>${product.wholesalePrice}</td>
+                <td style="font-weight:bold;">${product.stock}</td>
+                <td><span class="stock-status ${stockStatus.class}">${stockStatus.label}</span></td>
+                <td>
+                    <button class="filter-btn" style="padding:6px 12px; font-size:13px;" onclick="openStockAdjustModal(${product.id})">አስተካክል</button>
+                </td>
+            `;
+            list.appendChild(tr);
+        });
+
+        document.getElementById('totalProducts').textContent = products.length;
+        document.getElementById('lowStockCount').textContent = lowStockCount;
+    }
+
+    // Render edit products list
+    function renderEditProductsList() {
+        const list = document.getElementById('editProductsList');
+        list.innerHTML = '';
+        products.forEach(product => {
+            const stockStatus = getStockStatus(product.stock);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-weight:600;">${product.name}</td>
+                <td>${product.unit}</td>
+                <td>${product.retailPrice}</td>
+                <td>${product.wholesalePrice}</td>
+                <td><span class="stock-status ${stockStatus.class}">${product.stock}</span></td>
+                <td>
+                    <button class="filter-btn" style="padding:6px 12px; font-size:13px;" onclick="openEditProductModal(${product.id})">አስተካክል</button>
+                    <button class="filter-btn" style="padding:6px 12px; font-size:13px; background:#e74c3c; color:white; border:none;" onclick="deleteProduct(${product.id})">ሰርዝ</button>
+                </td>
+            `;
+            list.appendChild(tr);
+        });
+    }
+
+    // Delete product
+    async function deleteProduct(id) {
+        if(confirm('ይህንን እቃ ማጥፋት ይፈልጋሉ?')) {
+            try {
+                const response = await fetch(`/api/items/${id}`, { method: 'DELETE' });
+                const data = await response.json();
+                if (data.success) {
+                    await loadSavedData();
+                    renderEditProductsList();
+                    renderInventory();
+                    showToast('እቃ ተጠፍቷል', 'success');
+                }
+            } catch (error) {
+                showToast('ስህተት አጋጥሟል', 'error');
+            }
+        }
+    }
+
+    // Open stock adjust modal
+    function openStockAdjustModal(productId) {
+        const select = document.getElementById('stockProduct');
+        select.innerHTML = '';
+        products.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p.id;
+            option.textContent = `${p.name} (${p.unit}) - መጠን፡ ${p.stock}`;
+            option.selected = p.id === productId;
+            select.appendChild(option);
+        });
+        
+        document.getElementById('stockAdjustment').value = '';
+        document.getElementById('stockReason').value = '';
+        document.getElementById('stockAdjustId').value = productId || '';
+        stockModalOverlay.classList.add('active');
+    }
+
+    // Adjust stock
+    function adjustStock() {
+        openStockAdjustModal(null);
+    }
+
+    // Close stock modal
+    function closeStockModal() {
+        stockModalOverlay.classList.remove('active');
+    }
+
+    // Save stock adjustment
+    async function saveStockAdjustment() {
+        const productId = parseInt(document.getElementById('stockProduct').value);
+        const adjustment = parseInt(document.getElementById('stockAdjustment').value);
+        const reason = document.getElementById('stockReason').value.trim();
+
+        if (isNaN(adjustment) || adjustment === 0) {
+            showToast('ትክክለኛ የማስተካከያ መጠን ያስገቡ', 'error');
+            return;
+        }
+
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+
+        const newStock = product.stock + adjustment;
+        if (newStock < 0) {
+            showToast('መጠኑ ዜሮ ሊሆን አይችልም!', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/items/${productId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: product.name,
+                    unit: product.unit,
+                    cost_price: product.costPrice,
+                    retail_price: product.retailPrice,
+                    wholesale_price: product.wholesalePrice,
+                    quantity: newStock
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                product.stock = newStock;
+                closeStockModal();
+                await loadSavedData();
+                renderInventory();
+                renderProducts();
+                if(currentUser && currentUser.name === 'Manager') renderManagerDashboard();
+                showToast(`መጠን ተስተካክሏል፡ ${adjustment > 0 ? '+' : ''}${adjustment}`, 'success');
+            }
+        } catch (error) {
+            showToast('ስህተት አጋጥሟል', 'error');
+        }
+    }
+
+    // Render sales record
+    function renderSalesRecord() {
+        const list = document.getElementById('salesRecordList');
+        list.innerHTML = '';
+        if (salesHistory.length === 0) {
+            list.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:50px; color:#999;">ምንም የሽያጭ መዝገብ የለም።</td></tr>';
+            return;
+        }
+        [...salesHistory].reverse().forEach((sale, idx) => {
+            const originalIndex = salesHistory.length - 1 - idx;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${sale.date} ${sale.time}</td>
+                <td>${sale.user}</td>
+                <td><span class="mode-badge ${sale.mode}">${sale.mode === 'retail' ? 'ችርቻሮ' : 'ጅምላ'}</span></td>
+                <td style="font-weight:bold;">${sale.total} ብር</td>
+                <td><button class="filter-btn" style="padding:6px 12px; font-size:13px; background:#e74c3c; color:white; border:none;" onclick="deleteSale(${sale.id || originalIndex})">ሰርዝ</button></td>
+            `;
+            list.appendChild(tr);
+        });
+    }
+
+    // Delete sale
+    async function deleteSale(id) {
+        if(confirm('ይህንን የሽያጭ መዝገብ ማጥፋት ይፈልጋሉ? ማሳሰቢያ፡ መልሶ ማግኘት አይቻልም።')) {
+            try {
+                const response = await fetch(`/api/sales/${id}`, { method: 'DELETE' });
+                const data = await response.json();
+                if (data.success) {
+                    await loadSavedData();
+                    renderSalesRecord();
+                    showToast('መዝገቡ ተሰርዟል', 'success');
+                }
+            } catch (error) {
+                showToast('ስህተት አጋጥሟል', 'error');
+            }
+        }
+    }
+
+    // Render income report
+    function renderIncomeReport(type) {
+        const tbodyId = type === 'day' ? 'incomeDayTableBody' : 'incomeMonthTableBody';
+        const totalUnitsId = type === 'day' ? 'incomeDayTotalUnits' : 'incomeMonthTotalUnits';
+        const totalMoneyId = type === 'day' ? 'incomeDayTotalMoney' : 'incomeMonthTotalMoney';
+        
+        const tbody = document.getElementById(tbodyId);
+        tbody.innerHTML = '';
+        
+        let totalUnits = 0;
+        let totalMoney = 0;
+        currentViewData = [];
+
+        let dataToRender = {};
+        
+        if (type === 'day') {
+            const { dateStr } = setDate();
+            if (dailyIncomeRecords[dateStr]) {
+                dataToRender = dailyIncomeRecords[dateStr].items;
+                totalUnits = dailyIncomeRecords[dateStr].totalUnits;
+                totalMoney = dailyIncomeRecords[dateStr].totalMoney;
+            }
+        } else {
+            const now = new Date();
+            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            salesHistory.forEach(sale => {
+                if (sale.date.startsWith(currentMonthStr)) {
+                    for (const [pid, count] of Object.entries(sale.items)) {
+                        if (!dataToRender[pid]) dataToRender[pid] = 0;
+                        dataToRender[pid] += count;
+                    }
+                }
+            });
+        }
+
+        const productIds = Object.keys(dataToRender);
+        if (productIds.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:50px; color:#999;">ምንም መረጃ የለም</td></tr>';
+        } else {
+            productIds.forEach(pid => {
+                const count = dataToRender[pid];
+                const product = products.find(p => p.id == pid);
+                if (product) {
+                    let money = count * getCurrentPrice(product);
+                    totalUnits += count;
+                    totalMoney += money;
+                    currentViewData.push({ name: product.name, unit: count, money: money });
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${product.name}</td><td style="text-align:center;">${count}</td><td style="text-align:right; font-weight:600;">${money}</td>`;
+                    tbody.appendChild(tr);
+                }
+            });
+        }
+
+        document.getElementById(totalUnitsId).textContent = totalUnits;
+        document.getElementById(totalMoneyId).textContent = totalMoney;
+    }
+
+    // Update display
+    function updateDisplay() {
+        displayElement.textContent = currentTotal;
+    }
+
+    // Go to change calculator
+    function goToChangeCalculator() {
+        if (currentTotal <= 0) {
+            showToast('ለትርፍ ስሌት ምንም እቃ የለም!', 'error');
+            return;
+        }
+        navigateTo('change');
+    }
+
+    // Calculate change
+    function calculateChange() {
+        const amountReceived = parseFloat(amountReceivedInput.value);
+        
+        if (isNaN(amountReceived) || amountReceived === 0) {
+            changeResultDisplay.textContent = '0 ብር';
+            changeResultDisplay.style.color = 'var(--green-btn)';
+            return;
+        }
+        
+        const change = amountReceived - currentTotal;
+        
+        if (change < 0) {
+            changeResultDisplay.textContent = 'ገንዘቡ አልበቃም!';
+            changeResultDisplay.style.color = '#e74c3c';
+        } else {
+            changeResultDisplay.textContent = change.toFixed(2) + ' ብር';
+            changeResultDisplay.style.color = 'var(--green-btn)';
+        }
+    }
+
+    // Confirm transaction
+    async function confirmTransaction() {
+        const amountReceived = parseFloat(amountReceivedInput.value);
+        
+        if (isNaN(amountReceived) || amountReceived <= 0) {
+            showToast('የተቀበለውን መጠን ያስገቡ', 'error');
+            return;
+        }
+        
+        if (amountReceived < currentTotal) {
+            showToast('ገንዘቡ አልበቃም!', 'error');
+            return;
+        }
+
+        for (const [productId, count] of Object.entries(transactions)) {
+            const product = products.find(p => p.id == productId);
+            if (product && product.stock < count) {
+                showToast(`ለ${product.name} በቂ መጠን የለም!`, 'error');
+                return;
+            }
+        }
+
+        const { dateStr, timeStr } = setDate();
+        let totalUnits = 0;
+        for (const key in transactions) totalUnits += transactions[key];
+
+        // Save each item as a separate sale
+        for (const [productId, count] of Object.entries(transactions)) {
+            const product = products.find(p => p.id == productId);
+            if (product) {
+                const saleAmount = count * getCurrentPrice(product);
+                
+                try {
+                    await fetch('/api/sales', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            item_id: product.id,
+                            item_name: product.name,
+                            quantity: count,
+                            total_amount: saleAmount,
+                            sale_type: pricingMode
+                        })
+                    });
+                } catch (error) {
+                    console.error('Error saving sale:', error);
+                }
+            }
+        }
+
+        saveDailyIncome(dateStr, {
+            date: dateStr,
+            time: timeStr,
+            user: currentUser.name,
+            mode: pricingMode,
+            items: {...transactions},
+            total: currentTotal,
+            totalUnits: totalUnits
+        });
+
+        currentTotal = 0;
+        transactions = {};
+        currentMode = null;
+        btnPlus.classList.remove('active-mode');
+        btnMinus.classList.remove('active-mode');
+        
+        await loadSavedData();
+        updateDisplay();
+        renderProducts();
+        navigateTo('calculator');
+        checkLowStock();
+        showToast('ግብይቱ ተናቋል! የቀኑ ገቢ ተቀምጧል', 'success');
+    }
+
+    // Clear display
+    function clearDisplay() {
+        currentTotal = 0;
+        transactions = {};
+        currentMode = null;
+        btnPlus.classList.remove('active-mode');
+        btnMinus.classList.remove('active-mode');
+        clearLongPress();
+        renderProducts();
+        updateDisplay();
+    }
+
+    // Clear all data
+    function clearAllData() {
+        if(confirm('እርግጠኛ ነዎት? ይህ ሁሉንም የሶጃት ባልትና መረጃ ያጠፋል')) {
+            products = [];
+            salesHistory = [];
+            stockHistory = [];
+            dailyIncomeRecords = {};
+            nextId = 1;
+            clearDisplay();
+            showToast('ሁሉም መረጃ ተጽድቷል', 'success');
+        }
+    }
+
+    // Backup data
+    async function backupData() {
+        try {
+            const response = await fetch('/api/backup');
+            const data = await response.json();
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sojat_baltina_backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            showToast('ቅጂ ተወርዷል', 'success');
+        } catch (error) {
+            showToast('ስህተት አጋጥሟል', 'error');
+        }
+    }
+
+    // Show help
+    function showHelp() {
+        document.getElementById('infoModalTitle').textContent = 'እርዳታ - ሶጃት ባልትና';
+        document.getElementById('infoModalContent').textContent = 'እንኳን ደህና መጡ ሶጃት ባልትና ካልኩሌተር!\n\n📦 የእቃ መቆጣጠሪያ፡\n• ሽያጭ ሲኖር መጠኑ በራስ-ሰር ይቀንሳል\n• አዲስ እቃ ሲጨምሩ መጠኑን ያስገቡ\n• "መጠን አስተካክል" በመጠቀም በእጅ መጠን ማስተካከል ይችላሉ\n• መጠኑ 20 በታች ሆኖ ማስጠንቀቂያ ይመልሳል\n\n💾 የቀኑ ገቢ በራስ-ሰር መቀመጥ\n• የቀን ገቢ ከእያንዳንዱ ግብይት በኋላ በራስ-ሰር ይቀመጣል\n• መረጃው ብራውዘሩን ቢዘጉም ይቆያል\n• የቀኑ ገቢ በ"ገቢ በቀን" ክፍል ማየት ይችላሉ\n\n🧮 ካልኩሌተር፡\n• ☰ ሁሉንም ባህሪያት ለማየት ይጫኑ\n• በችርቻሮ እና ጅምላ ዋጋ መቀያየር ይችላሉ\n• + እቃዎችን ለመጨመር፣ - ለመቀነስ ይጫኑ\n• = ለትርፍ ስሌት ይጫኑ\n• አጭር ጠቅ (0.5 ሰከንድ) = 1 እቃ ይጨምራል\n• ረጅም ጠቅ (3 ሰከንድ) = የመጠን ቅጽ ይከፈታል\n\n🔐 የይለፍ ቃል፡\n• የሰራተኞች የይለፍ ቃል ሚስጥር ነው\n• አስተዳዳሪ ብቻ ማየት እና መቀየር ይችላል\n• የእርስዎን የይለፍ ቃል ለማወቅ አስተዳዳሪውን ያግኙ\n\n📊 ሪፖርቶች፡\n• የቀን እና የወር ገቢ ሪፖርት ማየት ይችላሉ\n• ወደ ስፕሬድሺት መላክ ይቻላል\n• ግራፍ ማየት ይቻላል\n\nለተጨማሪ እርዳታ አስተዳዳሪዎን ያግኙ።';
+        document.getElementById('infoModalOverlay').classList.add('active');
+    }
+
+    // Open add product modal
+    function openAddProductModal() {
+        document.getElementById('modalTitle').textContent = 'አዲስ እቃ ጨምር';
+        document.getElementById('productName').value = '';
+        document.getElementById('productUnit').value = 'በኪሎ';
+        document.getElementById('productCostPrice').value = '';
+        document.getElementById('productRetailPrice').value = '';
+        document.getElementById('productWholesalePrice').value = '';
+        document.getElementById('productStock').value = '0';
+        document.getElementById('editProductId').value = '';
+        modalOverlay.classList.add('active');
+        document.getElementById('productName').focus();
+    }
+
+    // Open edit product modal
+    function openEditProductModal(id) {
+        const product = products.find(p => p.id === id);
+        if (!product) return;
+        document.getElementById('modalTitle').textContent = 'እቃ አስተካክል';
+        document.getElementById('productName').value = product.name;
+        document.getElementById('productUnit').value = product.unit;
+        document.getElementById('productCostPrice').value = product.costPrice;
+        document.getElementById('productRetailPrice').value = product.retailPrice;
+        document.getElementById('productWholesalePrice').value = product.wholesalePrice;
+        document.getElementById('productStock').value = product.stock;
+        document.getElementById('editProductId').value = product.id;
+        modalOverlay.classList.add('active');
+    }
+
+    // Close modal
+    function closeModal() {
+        modalOverlay.classList.remove('active');
+    }
+
+    // Save product
+    async function saveProduct() {
+        const name = document.getElementById('productName').value.trim();
+        const unit = document.getElementById('productUnit').value.trim() || 'በኪሎ';
+        const costPrice = parseInt(document.getElementById('productCostPrice').value) || 0;
+        const retailPrice = parseInt(document.getElementById('productRetailPrice').value);
+        const wholesalePrice = parseInt(document.getElementById('productWholesalePrice').value);
+        const stock = parseInt(document.getElementById('productStock').value) || 0;
+        const editId = document.getElementById('editProductId').value;
+
+        if (!name || isNaN(retailPrice) || isNaN(wholesalePrice)) {
+            showToast('ትክክለኛ መረጃ ያስገቡ', 'error');
+            return;
+        }
+
+        const productData = {
+            name: name,
+            unit: unit,
+            cost_price: costPrice,
+            retail_price: retailPrice,
+            wholesale_price: wholesalePrice,
+            quantity: stock
+        };
+
+        try {
+            let url = '/api/items';
+            let method = 'POST';
+
+            if (editId) {
+                url = `/api/items/${editId}`;
+                method = 'PUT';
+            }
+
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(productData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showToast(editId ? 'እቃ ተስተካክሏል' : 'እቃ ተጨምሯል', 'success');
+                closeModal();
+                await loadSavedData();
+                renderEditProductsList();
+                renderInventory();
+                renderProducts();
+                if(currentUser && currentUser.name === 'Manager') renderManagerDashboard();
+            } else {
+                showToast('ስህተት አጋጥሟል: ' + data.error, 'error');
+            }
+        } catch (error) {
+            console.error('Error saving product:', error);
+            showToast('ከሰርቨሩ ጋር መገናኘት አልተቻለም', 'error');
+        }
+    }
+
+    // Export to spreadsheet
+    function exportCurrentViewToSpreadsheet() {
+        if (currentViewData.length === 0) { showToast('ለማውጣት ምንም መረጃ የለም!', 'error'); return; }
+        let csvContent = 'Item,Unit,Money (ETB)\n';
+        currentViewData.forEach(row => csvContent += `"${row.name}",${row.unit},${row.money}\n`);
+        const activeView = document.querySelector('.view-section.active');
+        let footerUnits = activeView.id === 'incomeDayView' ? document.getElementById('incomeDayTotalUnits').textContent : document.getElementById('incomeMonthTotalUnits').textContent;
+        let footerMoney = activeView.id === 'incomeDayView' ? document.getElementById('incomeDayTotalMoney').textContent : document.getElementById('incomeMonthTotalMoney').textContent;
+        csvContent += `\nTotal,${footerUnits},${footerMoney}`;
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `sojat_baltina_income_${activeView.id === 'incomeDayView' ? 'day' : 'month'}_${new Date().toISOString().slice(0,10)}.csv`;
+        link.click();
+        showToast('ሪፖርት ተልኳል!', 'success');
+    }
+
+    // Generate chart
+    function generateCurrentViewChart() {
+        if (currentViewData.length === 0) { showToast('ለግራፍ ምንም መረጃ የለም!', 'error'); return; }
+        chartModalOverlay.classList.add('active');
+        const labels = currentViewData.map(d => d.name);
+        const data = currentViewData.map(d => d.money);
+        const colors = ['#1a4d2e', '#26a69a', '#f4a460', '#ab47bc', '#ffa726', '#7e57c2', '#ec407a', '#e74c3c', '#9b59b6', '#3498db'];
+        if (chartInstance) chartInstance.destroy();
+        const ctx = document.getElementById('incomeChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels, datasets: [{ data, backgroundColor: colors.slice(0, labels.length), borderWidth: 2, borderColor: '#fff' }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+        });
+    }
+
+    // Close chart modal
+    function closeChartModal() {
+        chartModalOverlay.classList.remove('active');
+    }
+
+    // Show toast
+    function showToast(message, type = 'success') {
+        toast.textContent = message;
+        toast.className = `toast show ${type}`;
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // Modal click handlers
+    modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+    stockModalOverlay.addEventListener('click', (e) => { if (e.target === stockModalOverlay) closeStockModal(); });
+    chartModalOverlay.addEventListener('click', (e) => { if (e.target === chartModalOverlay) closeChartModal(); });
+    document.getElementById('infoModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('infoModalOverlay')) e.target.classList.remove('active'); });
+    document.getElementById('productStock').addEventListener('keypress', (e) => { if (e.key === 'Enter') saveProduct(); });
+
+    // Enter key for change calculator
+    amountReceivedInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            confirmTransaction();
+        }
+    });
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', async function() {
+        console.log('=== PAGE LOADED ===');
+        console.log('Loading data from database...');
+        await loadSavedData();
+        console.log('✅ App ready!');
+    });
+</script>
+<script>
+// Override the employee modal to ensure data is loaded
+window.openEmployeeModal = async function() {
+    // Make sure employees are loaded first
+    if (employees.length === 0) {
+        console.log('Loading employees from database...');
+        await loadSavedData();
+    }
+    
+    const modalContent = document.getElementById('employeeModalContent');
+    modalContent.innerHTML = '';
+    
+    if (employees.length === 0) {
+        modalContent.innerHTML = '<div style="padding: 20px; text-align: center; color: white;">ምንም ሰተኛ አልተገኘም</div>';
+        document.getElementById('employeeModalOverlay').classList.add('active');
+        return;
+    }
+    
+    employees.forEach(emp => {
+        const option = document.createElement('div');
+        option.className = 'employee-option';
+        if (emp.id === selectedEmployeeId) {
+            option.classList.add('selected');
+            tempSelectedEmployeeId = emp.id;
+        }
+        
+        option.innerHTML = `
+            <div class="employee-radio"></div>
+            <div class="employee-name">${emp.name}</div>
+        `;
+        
+        option.onclick = () => selectEmployeeInModal(emp.id, option);
+        modalContent.appendChild(option);
+    });
+    
+    document.getElementById('employeeModalOverlay').classList.add('active');
+};
+</script>
+</body>
+</html>
