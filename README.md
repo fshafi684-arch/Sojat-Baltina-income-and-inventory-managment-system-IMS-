@@ -37,11 +37,14 @@ A complete business management and inventory calculator app for Ethiopian busine
 <img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/ea64c9b7-8c27-4a96-ae72-c7e57762645c" />
 
  How to Run the Project:
+
 1.Clone the repository
 git clone https://github.com/fshafi684-arch/Sojat-Baltina-income-and-inventory-managment-system-IMS-/tree/main
 cd sojat-baltina-backend
+
 2. Install dependencies:
 npm install
+
 3.Set up the Database
 
 Create a free PostgreSQL database at Neon.tech
