@@ -15,11 +15,17 @@ A complete business management and inventory calculator app for Ethiopian busine
 - ✅ Works offline
 - ✅ Amharic language interface
 - ✅ Full REST API backend with Node.js & Express
+
 ✅ Cloud PostgreSQL database integration (Neon)
+
 ✅ Secure employee & manager authentication
+
 ✅ Real-time inventory tracking & stock management
+
 ✅ Sales recording with automatic stock deduction
+
 ✅ Bilingual Amharic/English UI with responsive design
+
 ✅ Data seeding, backup, and export functionality
 
 <img width="1366" height="767" alt="image" src="https://github.com/user-attachments/assets/a0c1c206-0ed2-45ca-b3b8-a8cf302205f3" />
