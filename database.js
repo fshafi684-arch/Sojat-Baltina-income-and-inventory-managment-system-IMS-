@@ -59,4 +59,6 @@ const createTables = async () => {
 };
 
 createTables();
+await pool.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS username VARCHAR(100)`);
+await pool.query(`ALTER TABLE sales ADD COLUMN IF NOT EXISTS item_id INTEGER`);
 module.exports = pool;
