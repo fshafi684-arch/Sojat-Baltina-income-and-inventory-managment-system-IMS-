@@ -247,6 +247,13 @@ app.get('/api/seed', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+// Serve the frontend files
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Show the website when visiting the main link
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
