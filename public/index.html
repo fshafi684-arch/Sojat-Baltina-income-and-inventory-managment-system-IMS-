@@ -3130,5 +3130,173 @@ window.openEmployeeModal = async function() {
     document.getElementById('employeeModalOverlay').classList.add('active');
 };
 </script>
+    <script>
+// --- FIX INCOME REPORTS AND USER NAMES ---
+
+// 1. Override loadSavedData to read username and item_id
+window.loadSavedData = async function() {
+    try {
+        const empResponse = await fetch('/api/employees');
+        const dbEmployees = await empResponse.json();
+        if (dbEmployees.length > 0) {
+            employees = dbEmployees.map(emp => ({ id: emp.id, name: emp.username, password: emp.password }));
+        }
+
+        const prodResponse = await fetch('/api/items');
+        const dbProducts = await prodResponse.json();
+        if (dbProducts.length > 0) {
+            products = dbProducts.map(p => ({
+                id: p.id, name: p.name, unit: p.unit,
+                costPrice: parseFloat(p.cost_price), retailPrice: parseFloat(p.retail_price),
+                wholesalePrice: parseFloat(p.wholesale_price), stock: parseInt(p.quantity)
+            }));
+            nextId = Math.max(...products.map(p => p.id)) + 1;
+        }
+
+        const salesResponse = await fetch('/api/sales');
+        const dbSales = await salesResponse.json();
+        if (dbSales.length > 0) {
+            salesHistory = dbSales.map(s => ({
+                id: s.id,
+                date: s.sale_date.split('T')[0],
+                time: s.sale_date.split('T')[1].split('.')[0],
+                user: s.username || 'Unknown', // FIX: Read actual username
+                mode: s.sale_type,
+                item_id: s.item_id,           // FIX: Read item_id
+                item_name: s.item_name,
+                quantity: parseInt(s.quantity),
+                total: parseFloat(s.total_amount)
+            }));
+        }
+        console.log('✅ Loaded from database:', { employees: employees.length, products: products.length, sales: salesHistory.length });
+    } catch (e) { console.error('Error loading from database:', e); }
+};
+
+// 2. Override confirmTransaction to send username and item_id
+window.confirmTransaction = async function() {
+    const amountReceived = parseFloat(document.getElementById('amountReceived').value);
+    if (isNaN(amountReceived) || amountReceived <= 0) { showToast('የተቀበለውን መጠን ያስገቡ', 'error'); return; }
+    if (amountReceived < currentTotal) { showToast('ገንዘቡ አልበቃም!', 'error'); return; }
+
+    for (const [productId, count] of Object.entries(transactions)) {
+        const product = products.find(p => p.id == productId);
+        if (product && product.stock < count) { showToast(`ለ${product.name} በቂ መጠን የለም!`, 'error'); return; }
+    }
+
+    // Save each item as a separate sale WITH USERNAME
+    for (const [productId, count] of Object.entries(transactions)) {
+        const product = products.find(p => p.id == productId);
+        if (product) {
+            const saleAmount = count * getCurrentPrice(product);
+            try {
+                await fetch('/api/sales', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        item_id: product.id, item_name: product.name, quantity: count,
+                        total_amount: saleAmount, sale_type: pricingMode,
+                        username: currentUser ? currentUser.name : 'Unknown' // FIX: Send username
+                    })
+                });
+            } catch (error) { console.error('Error saving sale:', error); }
+        }
+    }
+
+    currentTotal = 0; transactions = {}; currentMode = null;
+    document.getElementById('btnPlus').classList.remove('active-mode');
+    document.getElementById('btnMinus').classList.remove('active-mode');
+    
+    await loadSavedData(); // Reload to get the new sales
+    updateDisplay(); renderProducts(); navigateTo('calculator'); checkLowStock();
+    showToast('ግብይቱ ተናቋል! የቀኑ ገቢ ተቀምጧል', 'success');
+};
+
+// 3. Override renderIncomeReport to calculate from salesHistory
+window.renderIncomeReport = function(type) {
+    const tbodyId = type === 'day' ? 'incomeDayTableBody' : 'incomeMonthTableBody';
+    const totalUnitsId = type === 'day' ? 'incomeDayTotalUnits' : 'incomeMonthTotalUnits';
+    const totalMoneyId = type === 'day' ? 'incomeDayTotalMoney' : 'incomeMonthTotalMoney';
+    
+    const tbody = document.getElementById(tbodyId);
+    tbody.innerHTML = '';
+    let totalUnits = 0; let totalMoney = 0; currentViewData = [];
+    let filteredSales = [];
+
+    if (type === 'day') {
+        const { dateStr } = setDate();
+        filteredSales = salesHistory.filter(sale => sale.date === dateStr);
+    } else {
+        const now = new Date();
+        const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        filteredSales = salesHistory.filter(sale => sale.date.startsWith(currentMonthStr));
+    }
+
+    if (filteredSales.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:50px; color:#999;">ምንም መረጃ የለም</td></tr>';
+    } else {
+        const itemTotals = {};
+        filteredSales.forEach(sale => {
+            const name = sale.item_name || 'Unknown Item';
+            if (!itemTotals[name]) itemTotals[name] = { units: 0, money: 0 };
+            itemTotals[name].units += sale.quantity;
+            itemTotals[name].money += sale.total;
+        });
+
+        for (const [name, data] of Object.entries(itemTotals)) {
+            totalUnits += data.units; totalMoney += data.money;
+            currentViewData.push({ name: name, unit: data.units, money: data.money });
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${name}</td><td style="text-align:center;">${data.units}</td><td style="text-align:right; font-weight:600;">${data.money.toLocaleString()}</td>`;
+            tbody.appendChild(tr);
+        }
+    }
+    document.getElementById(totalUnitsId).textContent = totalUnits;
+    document.getElementById(totalMoneyId).textContent = totalMoney.toLocaleString();
+};
+
+// 4. Override renderManagerDashboard to calculate today's stats from salesHistory
+window.renderManagerDashboard = function() {
+    const todayStr = setDate().dateStr;
+    const todaySales = salesHistory.filter(s => s.date === todayStr);
+    
+    const todayIncome = todaySales.reduce((sum, s) => sum + s.total, 0);
+    const todayUnits = todaySales.reduce((sum, s) => sum + s.quantity, 0);
+    
+    let todayProfit = 0;
+    todaySales.forEach(sale => {
+        const product = products.find(p => p.id == sale.item_id);
+        if (product) { todayProfit += ((product.retailPrice - product.costPrice) * sale.quantity); }
+    });
+
+    const lowStockItems = products.filter(p => p.stock <= LOW_STOCK_THRESHOLD).length;
+
+    document.getElementById('mgrTodayIncome').textContent = todayIncome.toLocaleString() + ' ብር';
+    document.getElementById('mgrTodaySalesCount').textContent = todayUnits + ' ሽያጭ';
+    document.getElementById('mgrTodayProfit').textContent = todayProfit.toLocaleString() + ' ብር';
+    document.getElementById('mgrLowStockCount').textContent = lowStockItems;
+    document.getElementById('mgrTotalItems').textContent = products.length;
+
+    const empTbody = document.getElementById('mgrEmployeeTableBody');
+    if (empTbody) {
+        empTbody.innerHTML = '';
+        employees.forEach(emp => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td style="font-weight:600;">${emp.name}</td><td><span class="stock-status good">Active</span></td><td><button class="filter-btn" style="padding:4px 8px; font-size:12px;" onclick="openEditEmpPassword(${emp.id}, '${emp.name}')">ቀይር</button></td>`;
+            empTbody.appendChild(tr);
+        });
+    }
+
+    const tbody = document.getElementById('mgrStockTableBody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        products.forEach(p => {
+            const status = getStockStatus(p.stock);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td style="font-weight:600;">${p.name}</td><td>${p.unit}</td><td>${p.costPrice}</td><td>${p.retailPrice}</td><td style="font-weight:bold;">${p.stock}</td><td><span class="stock-status ${status.class}">${status.label}</span></td>`;
+            tbody.appendChild(tr);
+        });
+    }
+};
+</script>
 </body>
 </html>
