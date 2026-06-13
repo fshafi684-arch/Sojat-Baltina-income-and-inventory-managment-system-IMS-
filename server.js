@@ -254,6 +254,56 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+// --- SALES API ENDPOINTS ---
+
+// 1. Get All Sales
+app.get('/api/sales', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM sales ORDER BY sale_date DESC');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 2. Record a New Sale
+app.post('/api/sales', async (req, res) => {
+    const { item_id, item_name, quantity, total_amount, sale_type } = req.body;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN'); // Start transaction
+        
+        // Subtract stock
+        await client.query(
+            'UPDATE items SET quantity = quantity - $1 WHERE id = $2', 
+            [quantity, item_id]
+        );
+        
+        // Save the sale record
+        await client.query(
+            'INSERT INTO sales (item_name, quantity, total_amount, sale_type) VALUES ($1, $2, $3, $4)', 
+            [item_name, quantity, total_amount, sale_type]
+        );
+        
+        await client.query('COMMIT'); // Save changes
+        res.json({ success: true, message: 'Sale recorded!' });
+    } catch (err) {
+        await client.query('ROLLBACK'); // Undo if error
+        res.status(500).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+// 3. Delete a Sale
+app.delete('/api/sales/:id', async (req, res) => {
+    try {
+        await pool.query('DELETE FROM sales WHERE id = $1', [req.params.id]);
+        res.json({ success: true, message: 'Sale deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
