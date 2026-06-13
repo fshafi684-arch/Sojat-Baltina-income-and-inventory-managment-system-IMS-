@@ -268,33 +268,24 @@ app.get('/api/sales', async (req, res) => {
 
 // 2. Record a New Sale
 app.post('/api/sales', async (req, res) => {
-    const { item_id, item_name, quantity, total_amount, sale_type } = req.body;
+    const { item_id, item_name, quantity, total_amount, sale_type, username } = req.body;
     const client = await pool.connect();
     try {
-        await client.query('BEGIN'); // Start transaction
-        
-        // Subtract stock
+        await client.query('BEGIN');
+        await client.query('UPDATE items SET quantity = quantity - $1 WHERE id = $2', [quantity, item_id]);
         await client.query(
-            'UPDATE items SET quantity = quantity - $1 WHERE id = $2', 
-            [quantity, item_id]
+            'INSERT INTO sales (item_id, item_name, quantity, total_amount, sale_type, username) VALUES ($1, $2, $3, $4, $5, $6)', 
+            [item_id, item_name, quantity, total_amount, sale_type, username]
         );
-        
-        // Save the sale record
-        await client.query(
-            'INSERT INTO sales (item_name, quantity, total_amount, sale_type) VALUES ($1, $2, $3, $4)', 
-            [item_name, quantity, total_amount, sale_type]
-        );
-        
-        await client.query('COMMIT'); // Save changes
+        await client.query('COMMIT');
         res.json({ success: true, message: 'Sale recorded!' });
     } catch (err) {
-        await client.query('ROLLBACK'); // Undo if error
+        await client.query('ROLLBACK');
         res.status(500).json({ error: err.message });
     } finally {
         client.release();
     }
 });
-
 // 3. Delete a Sale
 app.delete('/api/sales/:id', async (req, res) => {
     try {
