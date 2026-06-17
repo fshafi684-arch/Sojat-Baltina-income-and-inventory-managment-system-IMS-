@@ -39,6 +39,9 @@ A complete business management and inventory calculator app for Ethiopian busine
  How to Run the Project:
 
 it can be accessed with this link https://sojat-baltina-income-and-inventory.onrender.com/
+or scan this Qr code:
+<img width="3547" height="3547" alt="sojat baltena calculat-B5YdLA" src="https://github.com/user-attachments/assets/548b6964-0183-490b-a7bd-dd123ad179bd" />
+
 
 1.Clone the repository
 git clone https://github.com/fshafi684-arch/Sojat-Baltina-income-and-inventory-managment-system-IMS-/tree/main
