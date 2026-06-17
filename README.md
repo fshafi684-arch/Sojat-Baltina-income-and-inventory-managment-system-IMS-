@@ -43,8 +43,7 @@ or scan this Qr code:
 
 
 
-<img width="3547" height="3547" alt="sojat baltena calculat-B5YdLA" src="https://github.com/user-attachments/assets/548b6964-0183-490b-a7bd-dd123ad179bd" />
-
+<img width="3387" height="1707" alt="sojat baltena calculat-B5YdLA" src="https://github.com/user-attachments/assets/858eeb83-7b2f-404f-82f8-da613b34d5d9" />
 
  How to Run the Project:
 
